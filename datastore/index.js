@@ -13,7 +13,7 @@ exports.create = (text, callback) => {
       throw(err)
     } else {
       // debugger;
-      var filePath = path.join(exports.dataDir, `${id}.txt`)
+      var filePath = path.join(exports.dataDir, `${id}.txt`);
       fs.writeFile(filePath, text, (err, result) => {
         if (err) {
           throw (err);
@@ -23,7 +23,6 @@ exports.create = (text, callback) => {
       })
     }
   });
-
 };
 
 exports.readAll = (callback) => {
@@ -45,12 +44,13 @@ exports.readAll = (callback) => {
 };
 
 exports.readOne = (id, callback) => {
-  var text = items[id];
-  if (!text) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    callback(null, { id, text });
-  }
+  fs.readFile(path.join(exports.dataDir, `${id}.txt`), 'utf-8', (err, text) => {
+    if (!text) {
+      callback(new Error(`No item with id: ${id}`));
+    } else {
+      callback(null, { id, text });
+    }
+  });
 };
 
 exports.update = (id, text, callback) => {
