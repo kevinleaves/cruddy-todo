@@ -20,7 +20,7 @@ exports.create = (text, callback) => {
         } else {
           callback(null, { id, text });
         }
-      })
+      });
     }
   });
 };
@@ -44,7 +44,7 @@ exports.readAll = (callback) => {
 };
 
 exports.readOne = (id, callback) => {
-  fs.readFile(path.join(exports.dataDir, `${id}.txt`), 'utf-8', (err, text) => {
+  fs.readFile(path.join(exports.dataDir, `${id}.txt`), {encoding: 'utf-8'}, (err, text) => {
     if (!text) {
       callback(new Error(`No item with id: ${id}`));
     } else {
@@ -54,24 +54,51 @@ exports.readOne = (id, callback) => {
 };
 
 exports.update = (id, text, callback) => {
-  var item = items[id];
-  if (!item) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    items[id] = text;
-    callback(null, { id, text });
-  }
+  fs.readFile(path.join(exports.dataDir, `${id}.txt`), {encoding: 'utf-8'}, (err, results) => {
+    if (!results) {
+      callback(new Error(`No item with id: ${id}`));
+    } else {
+      fs.writeFile(path.join(exports.dataDir, `${id}.txt`), text, (err, text) => {
+        if (err) {
+          callback(err);
+        } else {
+          callback(null, { id, text });
+        }
+      });
+    }
+  });
+  // var item = items[id];
+  // if (!item) {
+  //   callback(new Error(`No item with id: ${id}`));
+  // } else {
+  //   items[id] = text;
+  //   callback(null, { id, text });
+  // }
 };
 
 exports.delete = (id, callback) => {
-  var item = items[id];
-  delete items[id];
-  if (!item) {
-    // report an error if item not found
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    callback();
-  }
+  fs.readFile(path.join(exports.dataDir, `${id}.txt`), {encoding: 'utf-8'}, (err, results) => {
+    if (!results) {
+      callback(new Error(`No item with id: ${id}`));
+    } else {
+      fs.rm(path.join(exports.dataDir, `${id}.txt`), (err) => {
+        if (err) {
+          callback(err);
+        } else {
+          callback(null);
+        }
+      });
+    }
+  });
+
+  // var item = items[id];
+  // delete items[id];
+  // if (!item) {
+  //   // report an error if item not found
+  //   callback(new Error(`No item with id: ${id}`));
+  // } else {
+  //   callback();
+  // }
 };
 
 // Config+Initialization code -- DO NOT MODIFY /////////////////////////////////
