@@ -2,39 +2,69 @@ const fs = require('fs');
 const path = require('path');
 const _ = require('underscore');
 const counter = require('./counter');
+const Promise = require('bluebird');
 
-var items = {};
 
+Promise.promisifyAll(fs);
 // Public API - Fix these CRUD functions ///////////////////////////////////////
 
 exports.create = (text, callback) => {
-  counter.getNextUniqueId((err, id) => {
-    if (err) {
-      throw(err)
-    } else {
-      // debugger;
-      var filePath = path.join(exports.dataDir, `${id}.txt`);
-      fs.writeFile(filePath, text, (err, result) => {
-        if (err) {
-          throw (err);
-        } else {
-          callback(null, { id, text });
-        }
-      });
-    }
-  });
+  var ID;
+  return new Promise ((resolve, reject) => {
+    counter.getNextUniqueId()
+    .then((id) => {
+      ID = id;
+      return fs.writeFileAsync(path.join(exports.dataDir, `${id}.txt`), text);
+    })
+    .then((result) => {
+      resolve({id : ID, text});
+    })
+    .catch((err) => {
+      reject(err);
+    });
+  })
+  // counter.getNextUniqueId((err, id) => {
+  //   if (err) {
+  //     throw(err)
+  //   } else {
+  //     // debugger;
+  //     var filePath = path.join(exports.dataDir, `${id}.txt`);
+  //     fs.writeFile(filePath, text, (err, result) => {
+  //       if (err) {
+  //         throw (err);
+  //       } else {
+  //         callback(null, { id, text });
+  //       }
+  //     });
+  //   }
+  // });
 };
 
 exports.readAll = (callback) => {
-  fs.readdir(exports.dataDir, {encoding: 'utf-8'}, (err, results) => {
-    var data = _.map(results, (fileName) => {
-      var id = fileName.slice(0, -4);
-      var text = fs.readFileSync(path.join(exports.dataDir, `${id}.txt`), {encoding: 'utf-8'});
-      return {id, text};
+
+  return new Promise((resolve, reject) => {
+    fs.readdirAsync(exports.dataDir, {encoding: 'utf-8'})
+    .then((results) => {
+      var data = _.map(results, (fileName) => {
+        var id = fileName.slice(0, -4);
+        var text = fs.readFileSync(path.join(exports.dataDir, `${id}.txt`), {encoding: 'utf-8'});
+        return {id, text};
+      });
+      resolve(data);
+    })
+    .catch((err) => {
+      reject(err);
     });
-    console.log(data);
-    callback(null, data);
   });
+  // fs.readdir(exports.dataDir, {encoding: 'utf-8'}, (err, results) => {
+  //   var data = _.map(results, (fileName) => {
+  //     var id = fileName.slice(0, -4);
+  //     var text = fs.readFileSync(path.join(exports.dataDir, `${id}.txt`), {encoding: 'utf-8'});
+  //     return {id, text};
+  //   });
+  //   console.log(data);
+  //   callback(null, data);
+  // });
   // var data = _.map(items, (text, id) => {
   //   return { id, text };
   // });
@@ -42,29 +72,45 @@ exports.readAll = (callback) => {
 };
 
 exports.readOne = (id, callback) => {
-  fs.readFile(path.join(exports.dataDir, `${id}.txt`), {encoding: 'utf-8'}, (err, text) => {
-    if (!text) {
-      callback(new Error(`No item with id: ${id}`));
-    } else {
-      callback(null, { id, text });
-    }
-  });
+
+  return new Promise ((resolve, reject) => {
+    fs.readFileAsync(path.join(exports.dataDir, `${id}.txt`), {encoding: 'utf-8'})
+    .then((text) => {
+      resolve({id, text});
+    })
+    .catch((err) => {
+      reject(err);
+    })
+  })
 };
 
 exports.update = (id, text, callback) => {
-  fs.readFile(path.join(exports.dataDir, `${id}.txt`), {encoding: 'utf-8'}, (err, results) => {
-    if (!results) {
-      callback(new Error(`No item with id: ${id}`));
-    } else {
-      fs.writeFile(path.join(exports.dataDir, `${id}.txt`), text, (err, text) => {
-        if (err) {
-          callback(err);
-        } else {
-          callback(null, { id, text });
-        }
-      });
-    }
-  });
+  return new Promise ((resolve, reject) => {
+    fs.readFileAsync(path.join(exports.dataDir, `${id}.txt`), {encoding: 'utf-8'})
+    .then((results) => {
+      return fs.writeFileAsync(path.join(exports.dataDir, `${id}.txt`), text);
+    })
+    .then ((text) => {
+      resolve({id, text})
+    })
+    .catch((err) => {
+      reject(err)
+    })
+  })
+
+  // fs.readFile(path.join(exports.dataDir, `${id}.txt`), {encoding: 'utf-8'}, (err, results) => {
+  //   if (!results) {
+  //     callback(new Error(`No item with id: ${id}`));
+  //   } else {
+  //     fs.writeFile(path.join(exports.dataDir, `${id}.txt`), text, (err, text) => {
+  //       if (err) {
+  //         callback(err);
+  //       } else {
+  //         callback(null, { id, text });
+  //       }
+  //     });
+  //   }
+  // });
   // var item = items[id];
   // if (!item) {
   //   callback(new Error(`No item with id: ${id}`));
@@ -75,19 +121,34 @@ exports.update = (id, text, callback) => {
 };
 
 exports.delete = (id, callback) => {
-  fs.readFile(path.join(exports.dataDir, `${id}.txt`), {encoding: 'utf-8'}, (err, results) => {
-    if (!results) {
-      callback(new Error(`No item with id: ${id}`));
-    } else {
-      fs.rm(path.join(exports.dataDir, `${id}.txt`), (err) => {
-        if (err) {
-          callback(err);
-        } else {
-          callback(null);
-        }
-      });
-    }
-  });
+
+  return new Promise((resolve, reject) => {
+    fs.readFileAsync(path.join(exports.dataDir, `${id}.txt`), {encoding: 'utf-8'})
+    .then((results) => {
+      return fs.rmAsync(path.join(exports.dataDir, `${id}.txt`));
+    })
+    .then(() => {
+      resolve();
+    })
+    .catch((err) => {
+      reject(err)
+    })
+  })
+
+
+  // fs.readFile(path.join(exports.dataDir, `${id}.txt`), {encoding: 'utf-8'}, (err, results) => {
+  //   if (!results) {
+  //     callback(new Error(`No item with id: ${id}`));
+  //   } else {
+  //     fs.rm(path.join(exports.dataDir, `${id}.txt`), (err) => {
+  //       if (err) {
+  //         callback(err);
+  //       } else {
+  //         callback(null);
+  //       }
+  //     });
+  //   }
+  // });
 
   // var item = items[id];
   // delete items[id];

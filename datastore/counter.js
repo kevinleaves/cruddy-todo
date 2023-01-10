@@ -1,6 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const sprintf = require('sprintf-js').sprintf;
+const Promise = require('bluebird');
+
+Promise.promisifyAll(fs);
 
 var counter = 0;
 
@@ -15,36 +18,59 @@ const zeroPaddedNumber = (num) => {
   return sprintf('%05d', num);
 };
 
-const readCounter = (callback) => {
-  fs.readFile(exports.counterFile, (err, fileData) => {
-    if (err) {
-      callback(null, 0);
-    } else {
-      callback(null, Number(fileData));
-    }
+const readCounter = () => {
+
+  return new Promise((resolve, reject) => {
+    fs.readFileAsync(exports.counterFile).then((data) => {
+      resolve(Number(data))
+    }).catch((err) => reject(err));
   });
+  // fs.readFile(exports.counterFile, (err, fileData) => {
+  //   if (err) {
+  //     callback(null, 0);
+  //   } else {
+  //     callback(null, Number(fileData));
+  //   }
+  // });
 };
 
-const writeCounter = (count, callback) => {
+const writeCounter = (count) => {
   var counterString = zeroPaddedNumber(count);
-  fs.writeFile(exports.counterFile, counterString, (err) => {
-    if (err) {
-      throw ('error writing counter');
-    } else {
-      callback(null, counterString);
-    }
-  });
+
+  return new Promise((resolve, reject) => {
+    fs.writeFileAsync(exports.counterFile, counterString)
+    .then (() => {
+      resolve(counterString);
+    })
+    .catch((err) => {
+      reject(err);
+    })
+  })
+
+  // fs.writeFile(exports.counterFile, counterString, (err) => {
+  //   if (err) {
+  //     throw ('error writing counter');
+  //   } else {
+  //     callback(null, counterString);
+  //   }
+  // });
 };
 
 // Public API - Fix this function //////////////////////////////////////////////
 
-exports.getNextUniqueId = (callback) => {
+exports.getNextUniqueId = () => {
   //Read counter
-  readCounter((err, counter) => {
-    writeCounter(counter + 1, (err, result) => {
-      callback(null, result);
-    });
+  return new Promise((resolve, reject) => {
+    readCounter().then(counter => writeCounter(++counter))
+    .then((result) => {
+      resolve(zeroPaddedNumber(result));
+    }).catch((err) => reject(err));
   });
+  // readCounter((err, counter) => {
+  //   writeCounter(counter + 1, (err, result) => {
+  //     callback(null, result);
+  //   });
+  // });
     //If error
       //Call callback with error as first argument
     //Else
@@ -54,7 +80,7 @@ exports.getNextUniqueId = (callback) => {
           //Call callback with error as first argument
         //Else
           //Call callback with null for first and counter as second argument
-  return zeroPaddedNumber(counter);
+  // return zeroPaddedNumber(counter);
 };
 
 
