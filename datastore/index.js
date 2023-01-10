@@ -57,13 +57,22 @@ exports.readOne = (id, callback) => {
 };
 
 exports.update = (id, text, callback) => {
-  var item = items[id];
-  if (!item) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    items[id] = text;
-    callback(null, { id, text });
-  }
+  // if valid id, update
+  fs.readFile(path.join(exports.dataDir, `${id}.txt`), 'utf-8', (err) => {
+    if (err) {
+      callback(err)
+    } else {
+      fs.writeFile(path.join(exports.dataDir, `${id}.txt`), text,'utf-8', (err) => {
+        if (err) {
+          callback(err)
+        } else {
+          console.log(id, text)
+          let newTodo = {id: id, text: text}
+          callback(newTodo)
+        }
+      })
+    }
+  })
 };
 
 exports.delete = (id, callback) => {
