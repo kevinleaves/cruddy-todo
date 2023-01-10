@@ -46,12 +46,14 @@ exports.readAll = (callback) => {
 };
 
 exports.readOne = (id, callback) => {
-  var text = items[id];
-  if (!text) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    callback(null, { id, text });
-  }
+  fs.readFile(path.join(exports.dataDir, `${id}.txt`), 'utf-8', (err, textContent) => {
+    if (err) {
+      callback(err)
+    } else {
+      let todo = {id: id, text: textContent}
+      callback(null, todo)
+    }
+  })
 };
 
 exports.update = (id, text, callback) => {
