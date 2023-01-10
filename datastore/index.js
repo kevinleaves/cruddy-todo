@@ -29,10 +29,8 @@ exports.readAll = (callback) => {
   fs.readdir(exports.dataDir, {encoding: 'utf-8'}, (err, results) => {
     var data = _.map(results, (fileName) => {
       var id = fileName.slice(0, -4);
-      return {
-        id: id,
-        text: id
-      };
+      var text = fs.readFileSync(path.join(exports.dataDir, `${id}.txt`), {encoding: 'utf-8'});
+      return {id, text};
     });
     console.log(data);
     callback(null, data);
