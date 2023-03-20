@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const sprintf = require('sprintf-js').sprintf;
+const Promise = require('bluebird')
 
 var counter = 0;
 
@@ -38,12 +39,52 @@ const writeCounter = (count, callback) => {
 
 // Public API - Fix this function //////////////////////////////////////////////
 
-exports.getNextUniqueId = () => {
-  counter = counter + 1;
+exports.getNextUniqueId = (callback) => {
+  // read current id
+  readCounter((err, counter) => {
+    if (err) {
+      callback(err)
+    } else {
+      // once we have counter, take it and increment by 1 return that id
+      counter = counter + 1
+      // write the new counter to storage
+      writeCounter(counter, (err, result) => {
+        if (err) {
+          console.log(err)
+        } else {
+          callback(null, result)
+        }
+      })
+    }
+  });
+
   return zeroPaddedNumber(counter);
 };
 
-
+// exports.getNextUniqueId = () => {
+//   return new Promise ((resolve, reject) => {
+//     readCounter((err, counter) => {
+//       if (err) {
+//         reject(err)
+//       } else {
+//         resolve(counter + 1)
+//       }
+//     })
+//   })
+//   .then ((counter, (err, result) => {
+//     if (err) {
+//       reject(err)
+//     } else {
+//       resolve(result)
+//     }
+//   }))
+//   .then((counter) => {
+//     return zeroPaddedNumber(counter)
+//   })
+//   .catch((err) => {
+//     return err
+//   })
+// }
 
 // Configuration -- DO NOT MODIFY //////////////////////////////////////////////
 
